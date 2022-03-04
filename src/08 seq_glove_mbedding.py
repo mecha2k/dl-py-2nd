@@ -68,7 +68,7 @@ embedded = embedding_layer(inputs)
 x = Bidirectional(LSTM(32))(embedded)
 x = Dropout(0.5)(x)
 outputs = Dense(1, activation="sigmoid")(x)
-model = Model(inputs, outputs)
+model = Model(inputs=inputs, outputs=outputs)
 model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
 model.summary()
 
