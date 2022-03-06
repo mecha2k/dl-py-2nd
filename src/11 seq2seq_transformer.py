@@ -1,9 +1,8 @@
 import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras import Input, Model, Sequential
 from tensorflow.keras.layers import (
     Layer,
-    GRU,
-    Bidirectional,
     TextVectorization,
     Dropout,
     Dense,
@@ -11,6 +10,7 @@ from tensorflow.keras.layers import (
     MultiHeadAttention,
     LayerNormalization,
 )
+from tensorflow.keras.utils import plot_model
 import string, re, random
 import numpy as np
 
@@ -228,57 +228,6 @@ for inputs, targets in train_ds.take(1):
 
 
 embed_dim = 256
-latent_dim = 1024
-
-source = Input(shape=(None,), dtype="int64", name="english")
-x = Embedding(vocab_size, embed_dim, mask_zero=True)(source)
-encoded_source = Bidirectional(GRU(latent_dim), merge_mode="sum")(x)
-
-past_target = Input(shape=(None,), dtype="int64", name="spanish")
-x = Embedding(vocab_size, embed_dim, mask_zero=True)(past_target)
-decoder_gru = GRU(latent_dim, return_sequences=True)
-x = decoder_gru(x, initial_state=encoded_source)
-x = Dropout(0.5)(x)
-target_next_step = Dense(vocab_size, activation="softmax")(x)
-seq2seq_rnn = Model([source, past_target], target_next_step)
-
-seq2seq_rnn.compile(
-    optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
-)
-seq2seq_rnn.fit(train_ds, epochs=1, validation_data=val_ds)
-
-
-# **Translating new sentences with our RNN encoder and decoder**
-spa_vocab = target_vectorization.get_vocabulary()
-spa_index_lookup = dict(zip(range(len(spa_vocab)), spa_vocab))
-max_decoded_sentence_length = 20
-
-
-def decode_sequence(input_sentence):
-    tokenized_input_sentence = source_vectorization([input_sentence])
-    decoded_sentence = "[start]"
-    for i in range(max_decoded_sentence_length):
-        tokenized_target_sentence = target_vectorization([decoded_sentence])
-        next_token_predictions = seq2seq_rnn.predict(
-            [tokenized_input_sentence, tokenized_target_sentence]
-        )
-        sampled_token_index = np.argmax(next_token_predictions[0, i, :])
-        sampled_token = spa_index_lookup[sampled_token_index]
-        decoded_sentence += " " + sampled_token
-        if sampled_token == "[end]":
-            break
-    return decoded_sentence
-
-
-test_eng_texts = [pair[0] for pair in test_pairs]
-for _ in range(5):
-    input_sentence = random.choice(test_eng_texts)
-    print("-")
-    print(input_sentence)
-    print(decode_sequence(input_sentence))
-
-
-embed_dim = 256
 dense_dim = 2048
 num_heads = 8
 
@@ -292,13 +241,25 @@ x = TransformerDecoder(embed_dim, dense_dim, num_heads)(x, encoder_outputs)
 x = Dropout(0.5)(x)
 decoder_outputs = Dense(vocab_size, activation="softmax")(x)
 transformer = Model([encoder_inputs, decoder_inputs], decoder_outputs)
-
-
 transformer.compile(
     optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
-transformer.fit(train_ds, epochs=3, validation_data=val_ds)
+plot_model(transformer, "images/seq2seq_transformer.png", show_shapes=True)
+transformer.summary()
 
+callbacks = [
+    keras.callbacks.ModelCheckpoint("../data/seq2seq_transformer.keras", save_best_only=True)
+]
+# transformer.fit(train_ds, epochs=30, validation_data=val_ds, callbacks=callbacks)
+
+transformer = keras.models.load_model(
+    "../data/seq2seq_transformer.keras",
+    custom_objects={
+        "PositionalEmbedding": PositionalEmbedding,
+        "TransformerEncoder": TransformerEncoder,
+        "TransformerDecoder": TransformerDecoder,
+    },
+)
 
 spa_vocab = target_vectorization.get_vocabulary()
 spa_index_lookup = dict(zip(range(len(spa_vocab)), spa_vocab))

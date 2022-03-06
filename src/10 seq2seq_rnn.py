@@ -1,15 +1,13 @@
 import tensorflow as tf
-from tensorflow.keras import Input, Model, Sequential
+from tensorflow import keras
+from tensorflow.keras import Input, Model
 from tensorflow.keras.layers import (
-    Layer,
     GRU,
     Bidirectional,
     TextVectorization,
     Dropout,
     Dense,
     Embedding,
-    MultiHeadAttention,
-    LayerNormalization,
 )
 from tensorflow.keras.utils import plot_model
 import string, re, random
@@ -86,6 +84,9 @@ def make_dataset(pairs):
     spa_texts = list(spa_texts)
     dataset = tf.data.Dataset.from_tensor_slices((eng_texts, spa_texts))
     dataset = dataset.batch(batch_size)
+    # for eng, spa in dataset:
+    #     print(spa)
+    #     print(format_dataset(eng, spa))
     dataset = dataset.map(format_dataset, num_parallel_calls=4)
     return dataset.shuffle(2048).prefetch(16).cache()
 
@@ -103,23 +104,27 @@ embed_dim = 256
 latent_dim = 1024
 
 source = Input(shape=(None,), dtype="int64", name="english")
-x = Embedding(vocab_size, embed_dim, mask_zero=True)(source)
+x = Embedding(input_dim=vocab_size, output_dim=embed_dim, mask_zero=True)(source)
 encoded_source = Bidirectional(GRU(latent_dim), merge_mode="sum")(x)
 
 past_target = Input(shape=(None,), dtype="int64", name="spanish")
-x = Embedding(vocab_size, embed_dim, mask_zero=True)(past_target)
-decoder_gru = GRU(latent_dim, return_sequences=True)
-x = decoder_gru(x, initial_state=encoded_source)
+x = Embedding(input_dim=vocab_size, output_dim=embed_dim, mask_zero=True)(past_target)
+x = GRU(latent_dim, return_sequences=True)(x, initial_state=encoded_source)
 x = Dropout(0.5)(x)
 target_next_step = Dense(vocab_size, activation="softmax")(x)
-seq2seq_rnn = Model([source, past_target], target_next_step)
+
+seq2seq_rnn = Model(inputs=[source, past_target], outputs=target_next_step)
 seq2seq_rnn.compile(
     optimizer="rmsprop", loss="sparse_categorical_crossentropy", metrics=["accuracy"]
 )
 plot_model(seq2seq_rnn, "images/seq2seq_rnn.png", show_shapes=True)
 seq2seq_rnn.summary()
 
-seq2seq_rnn.fit(train_ds, epochs=10, validation_data=val_ds)
+callbacks = [keras.callbacks.ModelCheckpoint("../data/seq2seq_rnn.keras", save_best_only=True)]
+# seq2seq_rnn.fit(train_ds, epochs=15, validation_data=val_ds, callbacks=callbacks)
+
+
+model = keras.models.load_model("../data/seq2seq_rnn.keras")
 
 # **Translating new sentences with our RNN encoder and decoder**
 spa_vocab = target_vectorization.get_vocabulary()
