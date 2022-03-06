@@ -280,9 +280,10 @@ def decode_sequence1(input_sentence):
     return decoded_sentence
 
 
-test_eng_texts = [pair[0] for pair in test_pairs]
+test_eng_texts = [(pair[0], pair[1]) for pair in test_pairs]
 for _ in range(20):
     input_sentence = random.choice(test_eng_texts)
     print("-")
-    print(input_sentence)
-    print(decode_sequence1(input_sentence))
+    print(input_sentence[0])
+    print(decode_sequence1(input_sentence[0]))
+    print(decode_sequence1(input_sentence[1]))
