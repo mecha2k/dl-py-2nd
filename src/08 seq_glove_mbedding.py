@@ -54,7 +54,6 @@ for word, i in word_index.items():
     if embedding_vector is not None:
         embedding_matrix[i] = embedding_vector
 
-
 embedding_layer = Embedding(
     max_tokens,
     embedding_dim,

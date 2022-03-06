@@ -1,7 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import Input, Model
-from tensorflow.keras.utils import text_dataset_from_directory
+from tensorflow.keras.utils import text_dataset_from_directory, plot_model
 from tensorflow.keras.layers import (
     Layer,
     TextVectorization,
@@ -33,7 +33,9 @@ class TransformerEncoder(Layer):
     def call(self, inputs, mask=None):
         if mask is not None:
             mask = mask[:, tf.newaxis, :]
-        attention_output = self.attention(inputs, inputs, attention_mask=mask)
+        attention_output = self.attention(query=inputs, value=inputs, attention_mask=mask)
+        print("inputs: ", inputs.shape)
+        print("attention: ", attention_output.shape)
         proj_input = self.layernorm_1(inputs + attention_output)
         proj_output = self.dense_proj(proj_input)
         return self.layernorm_2(proj_input + proj_output)
@@ -64,6 +66,8 @@ class PositionalEmbedding(Layer):
         positions = tf.range(start=0, limit=length, delta=1)
         embedded_tokens = self.token_embeddings(inputs)
         embedded_positions = self.position_embeddings(positions)
+        print("tokens: ", embedded_tokens.shape)
+        print("positions: ", embedded_positions.shape)
         return embedded_tokens + embedded_positions
 
     @staticmethod
@@ -83,14 +87,17 @@ class PositionalEmbedding(Layer):
 
 
 batch_size = 32
-
 train_ds = text_dataset_from_directory("../data/aclImdb/train", batch_size=batch_size)
 val_ds = text_dataset_from_directory("../data/aclImdb/val", batch_size=batch_size)
 test_ds = text_dataset_from_directory("../data/aclImdb/test", batch_size=batch_size)
 text_only_train_ds = train_ds.map(lambda x, y: x)
 
-max_length = 200
+
+max_length = 600
 max_tokens = 20000
+sequence_length = max_length
+vocab_size = max_tokens
+
 
 text_vectorization = TextVectorization(
     max_tokens=max_tokens,
@@ -98,17 +105,25 @@ text_vectorization = TextVectorization(
     output_sequence_length=max_length,
 )
 text_vectorization.adapt(text_only_train_ds)
+vocabulary = text_vectorization.get_vocabulary()
+inverse_vocab = dict(enumerate(vocabulary))
 
 int_train_ds = train_ds.map(lambda x, y: (text_vectorization(x), y), num_parallel_calls=4)
 int_val_ds = val_ds.map(lambda x, y: (text_vectorization(x), y), num_parallel_calls=4)
 int_test_ds = test_ds.map(lambda x, y: (text_vectorization(x), y), num_parallel_calls=4)
 
+for inputs, targets in int_train_ds:
+    print(inputs[0])
+    print(inputs.shape)
+    print(targets.shape)
+    print(vocabulary[:10])
+    decoded_sentence = " ".join(inverse_vocab[int(idx)] for idx in inputs[0])
+    print(decoded_sentence)
+    break
 
-vocab_size = 20000
 embed_dim = 256
 num_heads = 2
 dense_dim = 32
-sequence_length = 600
 
 
 inputs = Input(shape=(None,), dtype="int64")
@@ -121,12 +136,13 @@ x = Dropout(0.5)(x)
 outputs = Dense(1, activation="sigmoid")(x)
 model = Model(inputs, outputs)
 model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
+plot_model(model, "images/transformer.png", show_shapes=True)
 model.summary()
 
 callbacks = [
     keras.callbacks.ModelCheckpoint("../data/full_transformer_encoder.keras", save_best_only=True)
 ]
-# model.fit(int_train_ds, validation_data=int_val_ds, epochs=20, callbacks=callbacks)
+model.fit(int_train_ds, validation_data=int_val_ds, epochs=20, callbacks=callbacks)
 
 model = keras.models.load_model(
     "../data/full_transformer_encoder.keras",

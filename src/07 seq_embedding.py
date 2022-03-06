@@ -29,8 +29,18 @@ int_train_ds = train_ds.map(lambda x, y: (text_vectorization(x), y), num_paralle
 int_val_ds = val_ds.map(lambda x, y: (text_vectorization(x), y), num_parallel_calls=4)
 int_test_ds = test_ds.map(lambda x, y: (text_vectorization(x), y), num_parallel_calls=4)
 
-inputs = Input(shape=(None,), dtype="int64")
-embedded = Embedding(input_dim=max_tokens, output_dim=256, mask_zero=True)(inputs)
+for inputs, targets in int_train_ds:
+    print(inputs.shape)
+    print(targets.shape)
+    print(inputs[0])
+    print(targets[0])
+    break
+
+inputs = Input(shape=(max_length,), dtype="int64")
+embedded_layer = Embedding(
+    input_dim=max_tokens, output_dim=256, input_length=max_length, mask_zero=True
+)
+embedded = embedded_layer(inputs)
 x = Bidirectional(LSTM(32))(embedded)
 x = Dropout(0.5)(x)
 outputs = Dense(1, activation="sigmoid")(x)
@@ -38,11 +48,15 @@ model = Model(inputs, outputs)
 model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
 model.summary()
 
-callbacks = [
-    keras.callbacks.ModelCheckpoint(
-        "../data/embeddings_bidir_gru_with_mask.keras", save_best_only=True
-    )
-]
-model.fit(int_train_ds, validation_data=int_val_ds, epochs=10, callbacks=callbacks)
+print(embedded_layer.get_weights()[0].shape)
+keras.utils.plot_model(model, "images/seq_embedding.png", show_shapes=True)
+
+# callbacks = [
+#     keras.callbacks.ModelCheckpoint(
+#         "../data/embeddings_bidir_gru_with_mask.keras", save_best_only=True
+#     )
+# ]
+# model.fit(int_train_ds, validation_data=int_val_ds, epochs=10, callbacks=callbacks)
+
 model = keras.models.load_model("../data/embeddings_bidir_gru_with_mask.keras")
-print(f"Test acc: {model.evaluate(int_test_ds)[1]:.3f}")
+# print(f"Test acc: {model.evaluate(int_test_ds)[1]:.3f}")
