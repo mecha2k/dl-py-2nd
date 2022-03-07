@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras.utils import plot_model
 
 random_numbers = np.random.normal(size=(1000, 16))
 dataset = tf.data.Dataset.from_tensor_slices(random_numbers)
@@ -44,7 +45,6 @@ print(x_test.shape[0], "test samples")
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
-
 model = keras.Sequential(
     [
         keras.Input(shape=input_shape),
@@ -60,20 +60,19 @@ model = keras.Sequential(
 model.summary()
 
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
-# model.fit(x_train, y_train, batch_size=128, epochs=1, validation_split=0.1)
+model.fit(x_train, y_train, batch_size=128, epochs=1, validation_split=0.2)
 # score = model.evaluate(x_test, y_test, verbose=0)
 # print("Test loss:", score[0])
 # print("Test accuracy:", score[1])
 
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.fashion_mnist.load_data()
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
 x_train, x_test = x_train / 255.0, x_test / 255.0
 
 # Add a channels dimension
 x_train = x_train[..., tf.newaxis].astype("float32")
 x_test = x_test[..., tf.newaxis].astype("float32")
 
-# convert class vectors to binary class matrices
 y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 print(y_train.shape)
@@ -100,7 +99,7 @@ outputs = keras.layers.Dense(num_classes, activation="softmax")(x)
 model = keras.Model(inputs=inputs, outputs=outputs)
 model.summary()
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
-# model.fit(train_ds, epochs=1, validation_split=0.2)
+model.fit(train_ds, epochs=1)
 
 
 class MyModel(keras.Model):
@@ -118,8 +117,21 @@ class MyModel(keras.Model):
         return self.d2(x)
 
 
-tf_model = MyModel()
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
 
+# Add a channels dimension
+x_train = x_train[..., tf.newaxis].astype("float32")
+x_test = x_test[..., tf.newaxis].astype("float32")
+
+train_ds = (
+    tf.data.Dataset.from_tensor_slices((x_train, y_train))
+    .shuffle(buffer_size=10000, seed=42)
+    .batch(batch_size=32)
+)
+test_ds = tf.data.Dataset.from_tensor_slices((x_test, y_test)).batch(batch_size=32)
+
+model = MyModel()
 loss_object = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 optimizer = tf.keras.optimizers.Adam()
 
@@ -135,7 +147,7 @@ def train_step(images, labels):
     with tf.GradientTape() as tape:
         # training=True is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
-        predictions = tf_model(images, training=True)
+        predictions = model(images, training=True)
         loss = loss_object(labels, predictions)
     gradients = tape.gradient(loss, model.trainable_variables)
     optimizer.apply_gradients(zip(gradients, model.trainable_variables))
@@ -148,7 +160,7 @@ def train_step(images, labels):
 def test_step(images, labels):
     # training=False is only needed if there are layers with different
     # behavior during training versus inference (e.g. Dropout).
-    predictions = tf_model(images, training=False)
+    predictions = model(images, training=False)
     t_loss = loss_object(labels, predictions)
 
     test_loss(t_loss)
@@ -177,14 +189,11 @@ for epoch in range(EPOCHS):
         f"Test Accuracy: {test_accuracy.result() * 100}"
     )
 
-# model.fit(dataset, epochs=1, validation_split=0.1)
-
 
 fashion_mnist = keras.datasets.fashion_mnist
 (train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
 print(train_images.shape)
 print(train_labels.shape)
-print(train_labels[0])
 
 train_images = train_images / 255.0
 test_images = test_images / 255.0
@@ -196,11 +205,10 @@ model = tf.keras.Sequential(
         tf.keras.layers.Dense(10),
     ]
 )
-model.compile(
-    optimizer="adam",
-    loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=["accuracy"],
-)
-model.fit(train_images, train_labels, epochs=1)
+loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+model.compile(optimizer="adam", loss=loss, metrics=["accuracy"])
+model.fit(train_images, train_labels, epochs=1, validation_split=0.2)
+plot_model(model, "images/simple_cnn.png", show_shapes=True)
 model.summary()
-print(train_labels.shape)
+# print(train_labels[:10])
+# print(model.weights)
