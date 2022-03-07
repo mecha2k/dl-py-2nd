@@ -51,12 +51,12 @@ model.summary()
 print(embedded_layer.get_weights()[0].shape)
 keras.utils.plot_model(model, "images/seq_embedding.png", show_shapes=True)
 
-# callbacks = [
-#     keras.callbacks.ModelCheckpoint(
-#         "../data/embeddings_bidir_gru_with_mask.keras", save_best_only=True
-#     )
-# ]
+callbacks = [
+    keras.callbacks.ModelCheckpoint(
+        "../data/embeddings_bidir_gru_with_mask.keras", save_best_only=True
+    )
+]
 # model.fit(int_train_ds, validation_data=int_val_ds, epochs=10, callbacks=callbacks)
 
 model = keras.models.load_model("../data/embeddings_bidir_gru_with_mask.keras")
-# print(f"Test acc: {model.evaluate(int_test_ds)[1]:.3f}")
+print(f"Test acc: {model.evaluate(int_test_ds)[1]:.3f}")
