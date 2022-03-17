@@ -1,10 +1,11 @@
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
-
+import os
 from tensorflow import keras
 from tensorflow.keras import models
 from tensorflow.keras import layers
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
 x = tf.ones(shape=(2, 1))
