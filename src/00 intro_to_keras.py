@@ -242,6 +242,8 @@ val_inputs = shuffled_inputs[:num_validation_samples]
 val_targets = shuffled_targets[:num_validation_samples]
 training_inputs = shuffled_inputs[num_validation_samples:]
 training_targets = shuffled_targets[num_validation_samples:]
+print(training_inputs.shape)
+print(training_targets.shape)
 model.fit(
     training_inputs,
     training_targets,
