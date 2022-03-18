@@ -163,3 +163,60 @@ outputs = Dense(10, activation="softmax")(x)
 model = Model(inputs=inputs, outputs=outputs)
 model.compile(optimizer="adam", loss="categorical_crossentropy", metrics=["accuracy"])
 model.summary()
+
+
+from tensorflow.keras.losses import SparseCategoricalCrossentropy
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.metrics import Mean, SparseCategoricalAccuracy
+
+loss_func = SparseCategoricalCrossentropy()
+optimizer = Adam(learning_rate=5e-5)
+
+train_loss = Mean(name="train_loss")
+train_accuracy = SparseCategoricalAccuracy(name="train_accuracy")
+test_loss = Mean(name="test_loss")
+test_accuracy = SparseCategoricalAccuracy(name="test_accuracy")
+
+
+@tf.function
+def train_step(images, labels):
+    with tf.GradientTape() as tape:
+        predictions = model(images)
+        loss = loss_func(labels, predictions)
+    gradients = tape.gradient(loss, model.trainable_variables)
+    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+    train_loss(loss)
+    train_accuracy(labels, predictions)
+
+
+@tf.function
+def test_step(images, labels):
+    predictions = model(images)
+    loss = loss_func(labels, predictions)
+
+    test_loss(loss)
+    test_accuracy(labels, predictions)
+
+
+epochs = 20
+
+for epoch in range(epochs):
+    for images, labels in train_ds:
+        train_step(images, labels)
+
+    for images, labels in test_ds:
+        test_step(images, labels)
+
+    template = (
+        "Epochs: {:3d}\tLoss: {:.4f}\tAccuracy: {:.4f}\tTest Loss: {:.4f}\tTest Accuracy: {:.4f}\t"
+    )
+    print(
+        template.format(
+            epoch + 1,
+            train_loss.result(),
+            train_accuracy.result() * 100,
+            test_loss.result(),
+            test_accuracy.result() * 100,
+        )
+    )
