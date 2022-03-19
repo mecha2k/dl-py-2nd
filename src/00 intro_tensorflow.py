@@ -1,3 +1,4 @@
+from turtle import shape
 import numpy as np
 import tensorflow as tf
 from icecream import ic
@@ -85,7 +86,7 @@ import timeit
 
 @tf.function
 def myfunc(x):
-    return x**2 - 10 * x + 3
+    return x ** 2 - 10 * x + 3
 
 
 print(myfunc(2))
@@ -93,7 +94,7 @@ print(myfunc(tf.constant(2)))
 
 
 def myfunc_(x):
-    return x**2 - 10 * x + 3
+    return x ** 2 - 10 * x + 3
 
 
 print(myfunc_(2))
@@ -144,7 +145,80 @@ inputs = tf.random.uniform(shape=(60, 28, 28))
 eager_model = SequentialModel()
 graph_model = tf.function(SequentialModel())
 
-print("Eager time: ", timeit.timeit(lambda: eager_model(inputs), number=1000))
-print("Graph time: ", timeit.timeit(lambda: graph_model(inputs), number=1000))
+print("Eager time: ", timeit.timeit(lambda: eager_model(inputs), number=100))
+print("Graph time: ", timeit.timeit(lambda: graph_model(inputs), number=100))
+
+x = tf.Variable(3.0)
+with tf.GradientTape() as tape:
+    y = x ** 2
+grad = tape.gradient(y, x)
+print(grad.numpy())
+
+# only to compute one set of gradients
+# x2 = tf.Variable(4)
+# grad = tape.gradient(y, x2)
+# print(grad.numpy())
+
+x = tf.Variable(2.0)
+y = tf.Variable(3.0)
+with tf.GradientTape() as tape:
+    y2 = y ** 2
+    z = x ** 2 + tf.stop_gradient(y2)
+grad = tape.gradient(z, {"x": x, "y": y2})
+print("dz/dx", grad["x"])
+print("dz/dy", grad["y"])
+
+weights = tf.Variable(tf.random.normal(shape=(3, 2), mean=0, stddev=1))
+biases = tf.Variable(tf.zeros(shape=(2,), dtype=tf.float32))
+
+x = [[1.0, 2.0, 3.0]]
+with tf.GradientTape(persistent=True) as tape:
+    y = x @ weights + biases
+    loss = tf.reduce_mean(y ** 2)
+
+(dw, db) = tape.gradient(loss, [weights, biases])
+print(weights.shape)
+print(dw.shape)
+
+weights2 = tf.Variable(tf.random.normal(shape=(3, 2), mean=0, stddev=1), name="weights")
+biases2 = tf.Variable(tf.zeros(shape=(2,), dtype=tf.float32), name="biases")
+
+x2 = [[4.0, 5.0, 6.0]]
+dw, db = tape.gradient(loss, [weights2, biases2])
+print(weights2.shape)
+
+del tape
 
 
+sigmoid = lambda x: 1 / (1 + np.exp(-x))
+
+
+def neuron(x, W, bias=0):
+    z = x * W + bias
+    return sigmoid(z)
+
+
+x = tf.random.normal(shape=(2, 3), mean=0, stddev=1)
+W = tf.random.normal(shape=(2, 3), mean=0, stddev=1)
+print(x.shape)
+print(W.shape)
+print(neuron(x, W).shape)
+
+x = tf.random.normal(shape=(1,), mean=0, stddev=1)
+W = tf.random.normal(shape=(2, 7), mean=0, stddev=1)
+print(x.shape)
+print(W.shape)
+print(neuron(x, W).shape)
+
+x = 1
+y = 0
+W = tf.random.normal(shape=(1,), mean=1, stddev=0)
+print(neuron(x, W))
+print(y)
+
+for i in range(2000):
+    output = neuron(x, W)
+    loss = y - output
+    W += 0.1 * x * loss
+    if i % 100 == 99:
+        print(f"{i+1}\t{loss}\t{output}\t")
