@@ -3,10 +3,9 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import itertools
 import os
-from transformers import logging
 from icecream import ic
 
-logging.set_verbosity(logging.ERROR)
+
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 
 np.random.seed(42)
@@ -33,16 +32,16 @@ tf.random.set_seed(42)
 # next_batch = iterator.get_next() 사용
 
 
-# builders = tfds.list_builders()
-# print(builders)
+builders = tfds.list_builders()
+print(builders)
 
 data, info = tfds.load("fashion_mnist", with_info=True)
 print(info)
 
-# data, info = tfds.load("mnist", with_info=True)
-# print(info)
+data, info = tfds.load("mnist", with_info=True)
+print(info)
 
-# train, test = data["train"], data["test"]
+train, test = data["train"], data["test"]
 
 # num_list = np.arange(20)
 # num_list_data = tf.data.Dataset.from_tensor_slices(num_list)
@@ -71,8 +70,8 @@ print(info)
 # for item in datasets:
 #     print(item)
 
-# data, info = tfds.load("imdb_reviews", with_info=True, as_supervised=True)
-# print(info)
+data, info = tfds.load("imdb_reviews", with_info=True, as_supervised=True)
+print(info)
 
 # train_datasets = data["train"]
 # print(type(train_datasets))

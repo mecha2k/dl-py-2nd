@@ -144,7 +144,7 @@ inputs = tf.random.uniform(shape=(60, 28, 28))
 eager_model = SequentialModel()
 graph_model = tf.function(SequentialModel())
 
-print("Eager time: ", timeit.timeit(lambda: eager_model(inputs), number=100))
-print("Graph time: ", timeit.timeit(lambda: graph_model(inputs), number=100))
+print("Eager time: ", timeit.timeit(lambda: eager_model(inputs), number=1000))
+print("Graph time: ", timeit.timeit(lambda: graph_model(inputs), number=1000))
 
 
