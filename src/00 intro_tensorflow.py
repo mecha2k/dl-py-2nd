@@ -7,86 +7,86 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 
-# a = tf.constant(2)
-# print(tf.rank(a))
-# print(a)
+a = tf.constant(2)
+print(tf.rank(a))
+print(a)
 
-# a = tf.constant([2, 3])
-# print(tf.rank(a))
-# print(a)
+a = tf.constant([2, 3])
+print(tf.rank(a))
+print(a)
 
-# a = tf.constant([[2, 3], [6, 7]])
-# print(tf.rank(a))
-# print(a)
+a = tf.constant([[2, 3], [6, 7]])
+print(tf.rank(a))
+print(a)
 
-# a = tf.constant(["string"])
-# print(tf.rank(a))
-# print(a)
+a = tf.constant(["string"])
+print(tf.rank(a))
+print(a)
 
-# a = tf.random.uniform(shape=(2, 3), minval=0, maxval=1)
-# print(a.shape)
-# print(a)
+a = tf.random.uniform(shape=(2, 3), minval=0, maxval=1)
+print(a.shape)
+print(a)
 
-# a = tf.random.normal(shape=(2, 3), mean=0, stddev=1)
-# print(tf.rank(a))
-# print(a)
+a = tf.random.normal(shape=(2, 3), mean=0, stddev=1)
+print(tf.rank(a))
+print(a)
 
-# # Eager Mode (즉시 실행 모드)
-# a = tf.constant(2)
-# b = tf.constant(3)
-# print(tf.add(a, b))
-# print(a + b)
-# print(tf.subtract(a, b))
-# print(a - b)
-# print(tf.multiply(a, b))
-# print(a * b)
-# print(tf.divide(a, b))
-# print(a / b)
+# Eager Mode (즉시 실행 모드)
+a = tf.constant(2)
+b = tf.constant(3)
+print(tf.add(a, b))
+print(a + b)
+print(tf.subtract(a, b))
+print(a - b)
+print(tf.multiply(a, b))
+print(a * b)
+print(tf.divide(a, b))
+print(a / b)
 
-# # tensorflow ↔ numpy
-# c = tf.add(a, b).numpy()
-# print(type(c))
+# tensorflow ↔ numpy
+c = tf.add(a, b).numpy()
+print(type(c))
 
-# c2 = np.square(c, dtype=np.float32)
-# c_tensor = tf.convert_to_tensor(c2)
-# print(c2)
-# print(type(c_tensor))
-# print(c_tensor)
+c2 = np.square(c, dtype=np.float32)
+c_tensor = tf.convert_to_tensor(c2)
+print(c2)
+print(type(c_tensor))
+print(c_tensor)
 
-# a = tf.constant([[1, 2, 3], [4, 5, 6]], dtype=tf.float32)
-# print(a.shape)
-# print(a.dtype)
-# print(a[:, 1:])
-# print(a[..., 2, tf.newaxis])
-# print(a[..., 2])
-# print(a + 10)
+a = tf.constant([[1, 2, 3], [4, 5, 6]], dtype=tf.float32)
+print(a.shape)
+print(a.dtype)
+print(a[:, 1:])
+print(a[..., 2, tf.newaxis])
+print(a[..., 2])
+print(a + 10)
 
-# x = np.arange(10)
-# print(x)
-# print(x[..., 0])
+x = np.arange(10)
+print(x)
+print(x[..., 0])
 
-# x = np.array([[[1, 2], [2, 3], [3, 4]], [[4, 5], [5, 6], [6, 7]]])
-# print(x)
-# print(x.shape)
-# print(x[..., 1])
-# print(x[:, :, 0])
-# print(x[:, np.newaxis, :, :].shape)
+x = np.array([[[1, 2], [2, 3], [3, 4]], [[4, 5], [5, 6], [6, 7]]])
+print(x)
+print(x.shape)
+print(x[..., 1])
+print(x[:, :, 0])
+print(x[:, np.newaxis, :, :].shape)
 
-# t = tf.constant([[1, 2, 3], [4, 5, 6]], dtype=tf.float32)
-# print(t @ tf.transpose(t))
-# print(tf.matmul(t, tf.transpose(t)))
+t = tf.constant([[1, 2, 3], [4, 5, 6]], dtype=tf.float32)
+print(t @ tf.transpose(t))
+print(tf.matmul(t, tf.transpose(t)))
 
-# a = tf.constant(2)
-# b = tf.constant(3.5)
-# c = tf.cast(a, tf.float32) + b
-# print(c)
+a = tf.constant(2)
+b = tf.constant(3.5)
+c = tf.cast(a, tf.float32) + b
+print(c)
 
 import timeit
 
 
 @tf.function
 def myfunc(x):
-    return x ** 2 - 10 * x + 3
+    return x**2 - 10 * x + 3
 
 
 print(myfunc(2))
@@ -94,7 +94,7 @@ print(myfunc(tf.constant(2)))
 
 
 def myfunc_(x):
-    return x ** 2 - 10 * x + 3
+    return x**2 - 10 * x + 3
 
 
 print(myfunc_(2))
@@ -150,7 +150,7 @@ print("Graph time: ", timeit.timeit(lambda: graph_model(inputs), number=100))
 
 x = tf.Variable(3.0)
 with tf.GradientTape() as tape:
-    y = x ** 2
+    y = x**2
 grad = tape.gradient(y, x)
 print(grad.numpy())
 
@@ -162,8 +162,8 @@ print(grad.numpy())
 x = tf.Variable(2.0)
 y = tf.Variable(3.0)
 with tf.GradientTape() as tape:
-    y2 = y ** 2
-    z = x ** 2 + tf.stop_gradient(y2)
+    y2 = y**2
+    z = x**2 + tf.stop_gradient(y2)
 grad = tape.gradient(z, {"x": x, "y": y2})
 print("dz/dx", grad["x"])
 print("dz/dy", grad["y"])
@@ -174,7 +174,7 @@ biases = tf.Variable(tf.zeros(shape=(2,), dtype=tf.float32))
 x = [[1.0, 2.0, 3.0]]
 with tf.GradientTape(persistent=True) as tape:
     y = x @ weights + biases
-    loss = tf.reduce_mean(y ** 2)
+    loss = tf.reduce_mean(y**2)
 
 (dw, db) = tape.gradient(loss, [weights, biases])
 print(weights.shape)
@@ -216,9 +216,56 @@ W = tf.random.normal(shape=(1,), mean=1, stddev=0)
 print(neuron(x, W))
 print(y)
 
-for i in range(2000):
+for i in range(100):
     output = neuron(x, W)
     loss = y - output
     W += 0.1 * x * loss
     if i % 100 == 99:
         print(f"{i+1}\t{loss}\t{output}\t")
+
+
+def neuron2(x, W, bias=0):
+    y = tf.matmul(a=x, b=W, transpose_a=True)
+    return sigmoid(y)
+
+
+x = tf.random.normal(shape=(3, 1), mean=0, stddev=1)
+W = tf.random.normal(shape=(3, 1), mean=0, stddev=1)
+b = tf.zeros(shape=(1,), dtype=tf.float32)
+y = tf.ones(shape=(1,), dtype=tf.float32)
+print("weights: ", W)
+print("biases: ", b)
+print("y_true: ", y)
+
+print(neuron2(x, W, b))
+print("y: ", y)
+
+for i in range(1000):
+    output = neuron2(x, W, bias=b)
+    loss = y - output
+    W += 0.1 * x * loss
+    b += 1.0 * 0.1 * loss
+
+    if i % 100 == 99:
+        print(f"{i+1}\t{loss}\t{output}\t")
+
+print("weights: ", W)
+print("biases: ", b)
+
+
+# AND gate
+X = np.array([[1, 1], [1, 0], [0, 1], [0, 0]])
+y = np.array([[1], [0], [0], [0]])
+
+W = tf.random.uniform(shape=(2,), minval=0, maxval=1)
+b = tf.random.uniform(shape=(1,), minval=0, maxval=1)
+
+print((X[0] * W))
+print(np.sum(X[0] * W) + b + 1.0)
+
+for epoch in range(1000):
+    err_sum = 0
+    for i in range(len(X)):
+        output = sigmoid(np.sum(X[i] * W) + b + 1)
+        error = y[i][0] - output
+        W += 0.1 * error * X[i]
