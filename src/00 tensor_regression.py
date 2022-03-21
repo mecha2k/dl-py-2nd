@@ -161,7 +161,7 @@ def run_optimization(x, y):
     optimizer.apply_gradients(zip(gradients, [W, b]))
 
 
-for epoch, (x_batch, y_batch) in enumerate(train_ds.take(1000)):
+for epoch, (x_batch, y_batch) in enumerate(train_ds.take(2000)):
     run_optimization(x_batch, y_batch)
     if epoch % 100 == 0:
         pred = logistic_regression(x_batch)
