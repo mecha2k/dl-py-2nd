@@ -53,11 +53,11 @@ import matplotlib.image as mpimg
 
 data_dir = "../data/cats_and_dogs_filtered"
 
-# if not os.path.exists(data_dir):
-#     os.makedirs(data_dir, exist_ok=True)
-# zip_file = zipfile.ZipFile("../data/cats_and_dogs_filtered.zip", mode="r")
-# zip_file.extractall(path=data_dir)
-# zip_file.close()
+if not os.path.exists(data_dir):
+    os.makedirs(data_dir, exist_ok=True)
+zip_file = zipfile.ZipFile("../data/cats_and_dogs_filtered.zip", mode="r")
+zip_file.extractall(path=data_dir)
+zip_file.close()
 
 train_cat_fnames = os.listdir(os.path.join(data_dir, "train/cats"))
 train_dog_fnames = os.listdir(os.path.join(data_dir, "train/dogs"))
@@ -127,12 +127,12 @@ model.add(Dense(1, activation="sigmoid"))
 model.compile(optimizer=Adam(learning_rate=1e-4), loss="binary_crossentropy", metrics=["acc"])
 model.summary()
 
-history = model.fit(
-    train_generator,
-    steps_per_epoch=100,
-    epochs=1,
-    batch_size=256,
-    validation_data=valid_generator,
-    validation_steps=50,
-    verbose=2,
-)
+# history = model.fit(
+#     train_generator,
+#     steps_per_epoch=100,
+#     epochs=1,
+#     batch_size=256,
+#     validation_data=valid_generator,
+#     validation_steps=50,
+#     verbose=2,
+# )
