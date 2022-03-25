@@ -1,15 +1,18 @@
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 import os
 
 np.set_printoptions(precision=3)
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
 
 plt.style.use("seaborn-white")
-plt.rcParams["font.size"] = 14
-plt.rcParams["figure.dpi"] = 100
-plt.rcParams["font.family"] = "AppleGothic"
+plt.rcParams["font.size"] = 10
+plt.rcParams["figure.dpi"] = 300
+plt.rcParams["font.family"] = font_manager.FontProperties(
+    fname="images/NanumBarunGothic.ttf"
+).get_name()
 plt.rcParams["axes.unicode_minus"] = False
 
 np.random.seed(42)
@@ -123,7 +126,7 @@ outputs = Dense(1, activation="sigmoid")(x)
 model = Model(inputs=inputs, outputs=outputs)
 model.summary()
 
-optimizer = Adam(learning_rate=1e-4)
+optimizer = Adam(learning_rate=1e-5)
 model.compile(optimizer=optimizer, loss="binary_crossentropy", metrics=["accuracy"])
 
 print(type(train_generator))
@@ -138,7 +141,7 @@ print(batch[1].shape)
 # history = model.fit(
 #     train_generator,
 #     steps_per_epoch=100,
-#     epochs=1,
+#     epochs=30,
 #     batch_size=256,
 #     validation_data=valid_generator,
 #     validation_steps=50,
@@ -146,6 +149,25 @@ print(batch[1].shape)
 # )
 # model.save("../data/cats_and_dogs_raw.h5")
 
+
+train_datagen = ImageDataGenerator(
+    rescale=1.0 / 255,
+    rotation_range=40,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True,
+    fill_mode="nearest",
+)
+valid_datagen = ImageDataGenerator(rescale=1.0 / 255)
+
+train_generator = train_datagen.flow_from_directory(
+    data_dir + "/train", target_size=(150, 150), batch_size=16, class_mode="binary"
+)
+valid_generator = valid_datagen.flow_from_directory(
+    data_dir + "/validation", target_size=(150, 150), batch_size=16, class_mode="binary"
+)
 
 vgg16_model = VGG16(weights="imagenet", input_shape=(150, 150, 3), include_top=False)
 
@@ -161,12 +183,12 @@ print(len(model.trainable_weights))
 vgg16_model.trainable = False
 print(len(model.trainable_weights))
 
-model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accuracy"])
+model.compile(optimizer=Adam(learning_rate=1e-5), loss="binary_crossentropy", metrics=["accuracy"])
 
 # history = model.fit(
 #     train_generator,
 #     steps_per_epoch=100,
-#     epochs=1,
+#     epochs=20,
 #     batch_size=256,
 #     validation_data=valid_generator,
 #     validation_steps=50,
@@ -174,24 +196,68 @@ model.compile(optimizer="rmsprop", loss="binary_crossentropy", metrics=["accurac
 # )
 # model.save("../data/cats_and_dogs_pretrained.h5")
 
+# hist_items = ["loss", "accuracy"]
+# plt.figure(figsize=(10, 4))
+# for i, item in enumerate(hist_items):
+#     plt.subplot(1, 2, i + 1)
+#     plt.plot(history.history[item], "b--", label=item)
+#     plt.plot(history.history[f"val_{item}"], "r:", label=f"val_{item}")
+#     plt.xlabel("epochs")
+#     plt.grid()
+#     plt.legend()
+# plt.savefig("images/vgg16_transfer")
+
 model = load_model("../data/cats_and_dogs_raw.h5")
 model.summary()
 
-image_file = os.path.join(data_dir, "validation/cats/" + valid_cat_fnames[5])
+image_file = os.path.join(data_dir, "validation/cats/" + valid_cat_fnames[200])
 image = load_img(image_file, target_size=(150, 150))
 img_tensor = img_to_array(image)
 img_tensor = img_tensor[np.newaxis, ...] / 255.0
 print(img_tensor.shape)
 
-# plt.imshow(img_tensor[0])
-# plt.show()
+plt.imshow(img_tensor[0])
+plt.savefig("images/cifar10_sample")
 
-layer_output = [layer.output for layer in model.layers[:7]]
-print(layer_output[6])
+layer_output = [layer.output for layer in model.layers[1:7]]
+for out in layer_output:
+    print(out)
 
 model = Model(inputs=[model.input], outputs=layer_output)
-prediction = model.predict(img_tensor)
-print(len(prediction))
-print(prediction[0].shape)
-plt.matshow(prediction[0][0, :, :, 0], cmap="viridis")
-plt.show()
+activations = model.predict(img_tensor)
+print(len(activations))
+print(activations[0].shape)
+# plt.matshow(activations[0][0, :, :, 7], cmap="viridis")
+# plt.show()
+
+
+images_per_row = 16
+layer_names = [layer.name for layer in model.layers[1:7]]
+fig, axes = plt.subplots(nrows=len(layer_names), ncols=1)
+fig.tight_layout()
+fig.subplots_adjust(hspace=0.5, wspace=0.5)
+for i, activation in enumerate(activations):
+    num_features = activation.shape[-1]
+    size = activation.shape[1]
+
+    num_cols = num_features // images_per_row
+    display_grid = np.zeros((size * num_cols, size * images_per_row))
+
+    for col in range(num_cols):
+        for row in range(images_per_row):
+            chan_img = activation[0, :, :, col * images_per_row + row]
+            chan_img -= chan_img.mean()
+            chan_img /= chan_img.std() + 0.001
+            chan_img *= 64
+            chan_img += 128
+            chan_img = np.clip(chan_img, 0, 255).astype(np.uint8)
+            display_grid[col * size : (col + 1) * size, row * size : (row + 1) * size] = chan_img
+
+    scale = 1.0 / size
+    # plt.figure(figsize=(scale * display_grid.shape[1], scale * display_grid.shape[0]))
+    axes[i].set_title(layer_names[i])
+    axes[i].set_xticklabels([])
+    axes[i].set_yticklabels([])
+    axes[i].grid(False)
+    axes[i].imshow(display_grid, aspect="equal", cmap="viridis")
+plt.savefig("images/transfer_conv", dpi=300)
